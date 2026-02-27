@@ -4,6 +4,7 @@ from playlist_logic import (
     DEFAULT_PROFILE,
     Song,
     build_playlists,
+    classify_song,
     compute_playlist_stats,
     history_summary,
     lucky_pick,
@@ -249,10 +250,20 @@ def add_song_sidebar():
             "tags": tags,
         }
         if title and artist:
-            normalized = normalize_song(song)
-            all_songs = st.session_state.songs[:]
-            all_songs.append(normalized)
-            st.session_state.songs = all_songs
+            try:
+                normalized = normalize_song(song)
+                mood = classify_song(normalized, st.session_state.profile)
+                all_songs = st.session_state.songs[:]
+                all_songs.append(normalized)
+                st.session_state.songs = all_songs
+                st.sidebar.success(
+                    f'Added "{normalized["title"]}" by {normalized["artist"]} '
+                    f'({normalized["genre"]} · {mood})'
+                )
+            except Exception as e:
+                st.sidebar.error(f"Could not add song: {e}")
+        else:
+            st.sidebar.warning("Please provide both a title and an artist.")
 
 
 def playlist_tabs(playlists):
